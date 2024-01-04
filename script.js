@@ -1,130 +1,91 @@
-const form = document.querySelector("form");
-const apiKey = "a7da785a617dffc356da0302df8ab5f5";
-const WatherclassName = {
-    Thunderstorm: "fa-cloud-bolt",
-    Drizzle: "fa-solid fa-cloud-sun-rain",
-    Rain: "fa-solid fa-cloud-showers-water",
-    Snow: "fa-solid fa-snowflake",
-    Clear: "fa-solid fa-sun",
-    Clouds: "fa-solid fa-cloud",
-  
-    Mist: "fa-solid  fa-smog",
-    Dust: "fa-solid  fa-smog",
-    Haze: "fa-solid  fa-smog",
-    Smoke: "fa-solid  fa-smog",
-    Fog: "fa-solid  fa-smog",
-    Tornado: "fa-solid fa-tornado",
-  };
-  const weatherInfoConatiner = document.querySelector("#weatherInfoConatiner");
-  
-  const citiesWeather = [];
-  
-  async function driverFun(city) {
-    try {
-      // Check if the city already exists in the array
-      const existingCityIndex = citiesWeather.findIndex(
-        (element) => element.city === city
-      );
-  
-      if (existingCityIndex !== -1) {
-        const weatherData = await fetchData(city);
-        citiesWeather[existingCityIndex] = weatherData;
-        alert("weather card already exist check the list");
-      } else {
-        const weatherData = await fetchData(city);
-        citiesWeather.push(weatherData);
-      }
-  
-      // Sort the array by increasing temperature
-      citiesWeather.sort((a, b) => a.temp - b.temp);
-  
-      input_city.value = "";
-  
-      // Print all cities data
-      printData();
-    } catch (error) {
-      console.error("Error in driverFun:", error);
-    }
+const api_key = "a7da785a617dffc356da0302df8ab5f5";
+const base_url = "https://api.openweathermap.org/data/2.5";
+const imgUrl = "https://openweathermap.org/img/wn";
+const cityInput = document.querySelector("#cityInput");
+const addCity = document.querySelector("#addCity");
+const footer = document.getElementById("footer");
+
+let weatherArray = [];
+
+async function getWeatherData(base_url, api_key) {
+  const response = await fetch(
+    `${base_url}/weather?q=${cityInput.value}&appid=${api_key}&&units=metric`
+  );
+  const result = await response.json();
+
+  if (cityInput.value && !isLocationPresent(result.name)) {
+    renderItem(result);
+    weatherArray.push(result);
+    console.log(weatherArray[0].main.temp);
+    console.log("this");
+    console.log(result);
   }
-  
-  async function fetchData(cityName) {
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${apiKey}&units=metric`;
-  
-    try {
-      const response = await fetch(url);
-  
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-  
-      const data = await response.json();
-      console.log(data);
-      const formattedData = formatData(data, cityName);
-      return formattedData;
-    } catch (error) {
-      alert("Enter a correct city name!!");
-      console.error("Error fetching data:", error);
-    }
+}
+
+addCity.addEventListener("click", () => {
+  getWeatherData(base_url, api_key);
+  if (cityInput.value === "") {
+    alert("Enter City First");
   }
-  
-  function printData() {
-    weatherInfoConatiner.innerHTML = "";
-    citiesWeather.forEach((ele) => {
-      const classname = getClassName(ele.main);
-      console.log(classname);
-      const cityInfo = document.createElement("div");
-      cityInfo.classList.add("cityInfo");
-      cityInfo.innerHTML = `<div class="city">
-              <div class="info1">
-                <h1>${ele.temp}&deg;</h1>
-  
-                <div>
-                  <p>H-${ele.t_high}&deg;,  L-${ele.t_min}&deg;</p>
-                  <h4> ${ele.cityPrint}</h4>
-                </div>
-              </div>
-              <div class="info2">
-                <p>${ele.weather}</p>
-              </div>
-            </div>`;
-      //  <i class=${classname}></i>
-      const icon = document.createElement("i");
-      icon.setAttribute("class", classname);
-      cityInfo.appendChild(icon);
-      weatherInfoConatiner.append(cityInfo);
-    });
-  }
-  
-  // format the weather api data
-  function formatData(data, city) {
-    let formattedData = {};
-    formattedData.temp = data.main.temp;
-    formattedData.t_high = data.main.temp_max;
-    formattedData.t_min = data.main.temp_min;
-    formattedData.weather = data.weather[0].description;
-    formattedData.main = data.weather[0].main;
-    formattedData.city = city;
-    formattedData.cityPrint = `${data.name}, ${data.sys.country}`;
-    return formattedData;
-  }
-  
-  function getClassName(condition) {
-    // Check if the condition exists in the WatherclassName object
-    if (WatherclassName.hasOwnProperty(condition)) {
-      return WatherclassName[condition];
-    } else {
-      // Default to a generic class if the condition is not found
-      return "fa-solid fa-sun";
-    }
-  }
-  
-  // ! event listners
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-  
-    if (input_city.value) {
-      driverFun(input_city.value);
-    } else {
-      alert("Enter a city name Please!!");
-    }
+});
+
+function isLocationPresent(location) {
+  return weatherArray.some((weather) => {
+    if (weather.name === location) alert("This City Already Present");
+    return weather.name === location;
   });
+}
+
+function renderItem(dataObj) {
+  const card = document.createElement("div");
+  card.setAttribute("class", "card mb-3");
+  card.style.maxWidth = "540px";
+
+  let src = `${imgUrl}/${dataObj.weather[0].icon}@2x.png`;
+
+  card.innerHTML = `
+    <div class="row g-0 h-100">
+        <div class="col-md-8">
+            <div class="card-body">
+                <h1 class="card-title">${Math.round(dataObj.main.temp)}°C</h1>
+                <div>
+                    <p class="card-text">
+                      <small class=" text-info">
+                        Humidity: ${dataObj.main.humidity}° 
+                        <br>
+                        Pressure: ${dataObj.main.pressure}
+                      </small>
+                    </p>
+                    <p class="card-text">${
+                      dataObj.name + ", " + dataObj.sys.country
+                    }</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <img src="${src}" height="100%" class="img-fluid rounded-5" alt="no-image">
+            <p class="text-center">${dataObj.weather[0].main}</p>
+        </div>
+    </div>
+  
+  `;
+
+  const temperature = Math.round(dataObj.main.temp);
+  updateFooterUI(card, temperature);
+}
+
+function updateFooterUI(card, temperature) {
+  let index = 0;
+  while (
+    index < footer.children.length &&
+    temperature < getTemperature(footer.children[index])
+  ) {
+    index++;
+  }
+
+  footer.insertBefore(card, footer.children[index]);
+}
+
+function getTemperature(card) {
+  return parseInt(card.querySelector(".card-title").innerText);
+}
